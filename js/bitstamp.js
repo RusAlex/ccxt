@@ -320,15 +320,25 @@ module.exports = class bitstamp extends Exchange {
         return await this.privatePostCancelOrder ({ 'id': id });
     }
 
-    parseOrderStatus (order) {
-        if ((order['status'] == 'Queue') || (order['status'] == 'Open'))
-            return 'open';
-        if (order['status'] == 'Finished')
-            return 'closed';
-        return order['status'];
-    }
+  parseOrderStatus (order) {
+    if ((order['status'] == 'Queue') || (order['status'] == 'Open'))
+      return 'open';
+    if (order['status'] == 'Finished')
+      return 'closed';
+    return order['status'];
+  }
 
-    async fetchOrderStatus (id, symbol = undefined) {
+  parseOrder (order, market = undefined) {
+    let status = undefined;
+    let result = {
+      'info': order,
+      'id': order['id'].toString (),
+      'status': this.parseOrderStatus({ status: order.status })
+    };
+    return result;
+  }
+
+  async fetchOrderStatus (id, symbol = undefined) {
         await this.loadMarkets ();
         let response = await this.privatePostOrderStatus ({ 'id': id });
         return this.parseOrderStatus (response);
@@ -347,7 +357,8 @@ module.exports = class bitstamp extends Exchange {
 
     async fetchOrder (id, symbol = undefined, params = {}) {
         await this.loadMarkets ();
-        return await this.privatePostOrderStatus ({ 'id': id });
+      let response = await this.privatePostOrderStatus ({ 'id': id });
+      return this.parseOrder(response);
     }
 
     getCurrencyName (code) {
